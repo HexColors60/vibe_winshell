@@ -124,6 +124,10 @@ impl ProcessManagerApp {
             filepane_show_confirm: false,
             filepane_confirm_action: None,
             filepane_confirm_message: String::new(),
+            filepane_second_confirm: false,
+            filepane_pending_operation: None,
+            filepane_operation_history: Vec::new(),
+            filepane_trash_items: Vec::new(),
         };
         app.configure_fonts(&cc.egui_ctx, false);
         app.add_log("WinShell started".to_string());

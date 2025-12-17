@@ -322,20 +322,24 @@ impl ProcessManagerApp {
             // Use Windows API to move to recycle bin
             use std::os::windows::ffi::OsStrExt;
             use std::ffi::OsString;
+            use windows::Win32::Foundation::HWND;
+            use windows::core::PCWSTR;
+            use windows::Win32::Foundation::BOOL;
 
             let mut wide_path: Vec<u16> = OsString::from(path).encode_wide().collect();
-            wide_path.push(0); // Null terminate
+            wide_path.push(0); // Null terminate with double null termination
+            wide_path.push(0);
 
             // Create the SHFILEOPSTRUCT
             let mut file_op = windows::Win32::UI::Shell::SHFILEOPSTRUCTW {
-                hwnd: None,
+                hwnd: HWND::default(),
                 wFunc: windows::Win32::UI::Shell::FO_DELETE,
-                pFrom: wide_path.as_ptr(),
-                pTo: std::ptr::null(),
+                pFrom: PCWSTR::from_raw(wide_path.as_ptr()),
+                pTo: PCWSTR::null(),
                 fFlags: windows::Win32::UI::Shell::FOF_ALLOWUNDO | windows::Win32::UI::Shell::FOF_NOCONFIRMATION,
-                fAnyOperationsAborted: false,
+                fAnyOperationsAborted: BOOL::from(false),
                 hNameMappings: std::ptr::null_mut(),
-                lpszProgressTitle: std::ptr::null(),
+                lpszProgressTitle: PCWSTR::null(),
             };
 
             // Call SHFileOperationW

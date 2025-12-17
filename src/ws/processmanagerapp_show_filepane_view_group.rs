@@ -13,7 +13,6 @@ use std::collections::{HashMap, HashSet};
 use super::processmanagerapp_type::ProcessManagerApp;
 use crate::ws::types::FileInfo;
 use crate::ws::FileOperation;
-use crate::ws::FilepaneCommand;
 
 impl ProcessManagerApp {
     pub(crate) fn show_filepane_view(&mut self, ui: &mut egui::Ui) {
@@ -372,6 +371,12 @@ impl ProcessManagerApp {
                         }
                         ContextAction::LogMessage(msg) => {
                             self.add_log(msg);
+                        }
+                        ContextAction::MoveFile { source: _, destination: _ } => {
+                            self.add_log("Move file operation from context menu".to_string());
+                        }
+                        ContextAction::DeleteFile { path: _ } => {
+                            self.add_log("Delete file operation from context menu".to_string());
                         }
                         ContextAction::CloseMenu => {}
                     }
