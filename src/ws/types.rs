@@ -5,7 +5,7 @@
 use std::collections::{HashSet};
 
 #[derive(PartialEq, Clone, Copy)]
-enum ViewMode {
+pub enum ViewMode {
     Processes,
     Files,
     Network,
@@ -98,7 +98,7 @@ pub struct ProcessInfo {
     exe_path: Option<String>,
 }
 #[derive(PartialEq, Clone, Copy)]
-enum SortColumn {
+pub enum SortColumn {
     Pid,
     Name,
     Memory,
@@ -116,7 +116,7 @@ enum SortColumn {
     WindowTitle,
 }
 #[derive(Clone, Debug)]
-enum FilepaneCommand {
+pub enum FilepaneCommand {
     CopyFile { source: String, destination: String },
     MoveFile { source: String, destination: String },
     DeleteFile { path: String },
@@ -126,14 +126,14 @@ enum FilepaneCommand {
     CalculateChecksum { path: String, algorithm: ChecksumAlgorithm },
 }
 #[derive(Clone, Debug, PartialEq)]
-enum ChecksumAlgorithm {
+pub enum ChecksumAlgorithm {
     MD5,
     SHA1,
     SHA256,
     CRC32,
 }
 impl ChecksumAlgorithm {
-    fn name(&self) -> &'static str {
+    pub fn name(&self) -> &'static str {
         match self {
             ChecksumAlgorithm::MD5 => "MD5",
             ChecksumAlgorithm::SHA1 => "SHA1",
@@ -143,7 +143,7 @@ impl ChecksumAlgorithm {
     }
 }
 #[derive(PartialEq, Clone, Copy)]
-enum Theme {
+pub enum Theme {
     Dark,
     Light,
 }
@@ -181,7 +181,7 @@ pub struct FilepaneTab {
     checksum_algorithm: ChecksumAlgorithm,
 }
 impl FilepaneTab {
-    fn new(name: String, left_path: String, right_path: String) -> Self {
+    pub fn new(name: String, left_path: String, right_path: String) -> Self {
         Self {
             name,
             left_path,
@@ -201,7 +201,7 @@ impl FilepaneTab {
     }
 }
 #[derive(Debug)]
-enum ContextAction {
+pub enum ContextAction {
     NavigateToDirectory { path: String, panel_index: usize },
     OpenFile { path: String },
     CopyFile { source: String, destination: String, speed_limit: f64 },

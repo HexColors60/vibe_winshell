@@ -8,7 +8,7 @@ use std::collections::{HashMap, HashSet};
 use super::processmanagerapp_type::ProcessManagerApp;
 
 impl ProcessManagerApp {
-    fn save_conversation_history(
+    pub fn save_conversation_history(
         &self,
         conversation_text: &str,
     ) -> Result<String, String> {
