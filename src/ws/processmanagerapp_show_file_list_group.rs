@@ -184,7 +184,7 @@ impl ProcessManagerApp {
                 },
             );
     }
-    fn open_file_path(&mut self, path: &str) {
+    pub fn open_file_path(&mut self, path: &str) {
         #[cfg(windows)]
         {
             let _ = std::process::Command::new("explorer")

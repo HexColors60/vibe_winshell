@@ -8,7 +8,7 @@ use std::collections::{HashMap, HashSet};
 use super::processmanagerapp_type::ProcessManagerApp;
 
 impl ProcessManagerApp {
-    fn redo_last_action(&mut self) {
+    pub fn redo_last_action(&mut self) {
         if self.filepane_active_tab >= self.filepane_tabs.len() {
             return;
         }
@@ -45,7 +45,7 @@ impl ProcessManagerApp {
             tab.undo_stack.push(command);
         }
     }
-    fn save_current_paths(&mut self) {
+    pub fn save_current_paths(&mut self) {
         if self.filepane_active_tab >= self.filepane_tabs.len() {
             return;
         }

@@ -8,7 +8,7 @@ use std::collections::{HashMap, HashSet};
 use super::processmanagerapp_type::ProcessManagerApp;
 
 impl ProcessManagerApp {
-    fn execute_command(&mut self, command: &FilepaneCommand) {
+    pub fn execute_command(&mut self, command: &FilepaneCommand) {
         match command {
             FilepaneCommand::CopyFile { source, destination } => {
                 self.add_log(format!("Copying {} to {}", source, destination));

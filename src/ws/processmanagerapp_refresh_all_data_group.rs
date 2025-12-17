@@ -8,7 +8,7 @@ use std::collections::{HashMap, HashSet};
 use super::processmanagerapp_type::ProcessManagerApp;
 
 impl ProcessManagerApp {
-    fn refresh_all_data(&mut self) {
+    pub fn refresh_all_data(&mut self) {
         self.refresh_windows();
         self.refresh_processes();
         self.refresh_file_handles();
@@ -245,7 +245,7 @@ impl ProcessManagerApp {
         }
         #[cfg(target_os = "macos")] {}
     }
-    fn refresh_network_connections(&mut self) {
+    pub fn refresh_network_connections(&mut self) {
         self.network_connections.clear();
         #[cfg(target_os = "linux")]
         {

@@ -8,7 +8,7 @@ use std::collections::{HashMap, HashSet};
 use super::processmanagerapp_type::ProcessManagerApp;
 
 impl ProcessManagerApp {
-    fn bring_window_to_foreground(&mut self, window_id: u64) {
+    pub fn bring_window_to_foreground(&mut self, window_id: u64) {
         for window in &mut self.windows {
             window.is_foreground = window.window_id == window_id;
         }

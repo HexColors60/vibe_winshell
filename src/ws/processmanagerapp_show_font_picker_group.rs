@@ -144,7 +144,7 @@ impl ProcessManagerApp {
             );
         self.font_picker.is_open = open;
     }
-    fn save_config(&self) {
+    pub fn save_config(&self) {
         let config_path = Self::get_config_path();
         let mut content = String::new();
         content.push_str("[Settings]\n");

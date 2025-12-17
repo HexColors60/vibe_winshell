@@ -8,7 +8,7 @@ use std::collections::{HashMap, HashSet};
 use super::processmanagerapp_type::ProcessManagerApp;
 
 impl ProcessManagerApp {
-    fn configure_fonts(&self, ctx: &egui::Context, preview_only: bool) {
+    pub fn configure_fonts(&self, ctx: &egui::Context, preview_only: bool) {
         let path_to_load = if preview_only {
             if let Some(selected) = &self.font_picker.selected_file {
                 std::path::Path::new(&self.font_picker.directory).join(selected)

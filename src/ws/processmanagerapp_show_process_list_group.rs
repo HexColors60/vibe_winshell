@@ -274,7 +274,7 @@ impl ProcessManagerApp {
     ) -> Option<egui::ColorImage> {
         None
     }
-    fn add_custom_program(
+    pub fn add_custom_program(
         &mut self,
         name: String,
         path: String,

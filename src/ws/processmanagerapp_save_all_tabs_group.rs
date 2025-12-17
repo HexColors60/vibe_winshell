@@ -8,7 +8,7 @@ use std::collections::{HashMap, HashSet};
 use super::processmanagerapp_type::ProcessManagerApp;
 
 impl ProcessManagerApp {
-    fn save_all_tabs(&mut self) {
+    pub fn save_all_tabs(&mut self) {
         let mut ini_content = String::from("[FilepaneTabs]\n");
         for (i, tab) in self.filepane_tabs.iter().enumerate() {
             ini_content
@@ -43,7 +43,7 @@ impl ProcessManagerApp {
             );
         }
     }
-    fn load_paths_from_config(&mut self) {
+    pub fn load_paths_from_config(&mut self) {
         if !std::path::Path::new(&self.filepane_config_path).exists() {
             self.add_log("No config file found".to_string());
             return;
@@ -75,7 +75,7 @@ impl ProcessManagerApp {
             }
         }
     }
-    fn show_filepane_confirmation_dialog(&mut self, ui: &mut egui::Ui) {
+    pub fn show_filepane_confirmation_dialog(&mut self, ui: &mut egui::Ui) {
         let should_show = self.filepane_show_confirm;
         let confirm_message = self.filepane_confirm_message.clone();
         let confirm_action = self.filepane_confirm_action.clone();
@@ -114,7 +114,7 @@ impl ProcessManagerApp {
                 );
         }
     }
-    fn show_file_properties(&mut self, file_info: &FileInfo) {
+    pub fn show_file_properties(&mut self, file_info: &FileInfo) {
         let file_type = if file_info.is_directory { "Directory" } else { "File" };
         let modified_time = file_info
             .modified
@@ -133,7 +133,7 @@ impl ProcessManagerApp {
         }
         self.add_log("=================================".to_string());
     }
-    fn open_file_with_system(&self, path: &str) {
+    pub fn open_file_with_system(&self, path: &str) {
         #[cfg(target_os = "windows")]
         {
             let _ = std::process::Command::new("cmd")
@@ -149,7 +149,7 @@ impl ProcessManagerApp {
             let _ = std::process::Command::new("open").arg(path).spawn();
         }
     }
-    fn save_current_conversation(&mut self) {
+    pub fn save_current_conversation(&mut self) {
         let mut conversation_text = String::new();
         if !self.conversation_history.is_empty() {
             conversation_text.push_str("=== Previous Conversation ===\n");

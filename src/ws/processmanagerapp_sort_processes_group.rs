@@ -8,7 +8,7 @@ use std::collections::{HashMap, HashSet};
 use super::processmanagerapp_type::ProcessManagerApp;
 
 impl ProcessManagerApp {
-    fn sort_processes(&mut self) {
+    pub fn sort_processes(&mut self) {
         let ascending = self.sort_ascending;
         match self.sort_column {
             SortColumn::Pid => {

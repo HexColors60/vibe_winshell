@@ -8,7 +8,7 @@ use std::collections::{HashMap, HashSet};
 use super::processmanagerapp_type::ProcessManagerApp;
 
 impl ProcessManagerApp {
-    fn close_network_connection(&mut self, connection_id: &str) -> bool {
+    pub fn close_network_connection(&mut self, connection_id: &str) -> bool {
         #[cfg(target_os = "linux")]
         {
             if let Some(conn) = self
