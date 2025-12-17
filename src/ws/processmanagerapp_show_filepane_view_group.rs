@@ -94,6 +94,15 @@ impl ProcessManagerApp {
                     {
                         self.redo_last_action();
                     }
+                    if !self.filepane_trash_items.is_empty() {
+                        if ui
+                            .button("♻️ Restore")
+                            .on_hover_text(&format!("Restore {} item(s) from trash", self.filepane_trash_items.len()))
+                            .clicked()
+                        {
+                            self.restore_from_trash();
+                        }
+                    }
                     ui.separator();
                     if ui
                         .button("💾 Save")
@@ -270,32 +279,43 @@ impl ProcessManagerApp {
                                         }
                                         ui.separator();
                                         if ui.button("📋 Copy").clicked() {
-                                            context_actions
-                                                .push(ContextAction::CopyFile {
-                                                    source: file_path.clone(),
-                                                    destination: dest_path.clone(),
-                                                    speed_limit,
-                                                });
+                                            let command = FilepaneCommand::CopyFile {
+                                                source: file_path.clone(),
+                                                destination: dest_path.clone(),
+                                            };
+                                            self.request_file_operation_confirmation(
+                                                &command,
+                                                format!("Are you sure you want to copy:\n\n{}\n\nto:\n\n{}", file_name, dest_path)
+                                            );
                                         }
                                         if ui.button("✂️ Cut").clicked() {
-                                            context_actions.push(ContextAction::Cut);
+                                            let command = FilepaneCommand::MoveFile {
+                                                source: file_path.clone(),
+                                                destination: dest_path.clone(),
+                                            };
+                                            self.request_file_operation_confirmation(
+                                                &command,
+                                                format!("Are you sure you want to move:\n\n{}\n\nto:\n\n{}", file_name, dest_path)
+                                            );
                                         }
                                         ui.separator();
                                         if ui.button("🏷️ Rename").clicked() {
+                                            // For now, just log - rename would need a dialog for new name
                                             context_actions
                                                 .push(
                                                     ContextAction::LogMessage(
-                                                        format!("Rename not implemented for: {}", file_name),
+                                                        format!("Rename feature needs input dialog for: {}", file_name),
                                                     ),
                                                 );
                                         }
                                         if ui.button("🗑️ Delete").clicked() {
-                                            context_actions
-                                                .push(
-                                                    ContextAction::LogMessage(
-                                                        format!("Delete not implemented for: {}", file_name),
-                                                    ),
-                                                );
+                                            let command = FilepaneCommand::DeleteFile {
+                                                path: file_path.clone(),
+                                            };
+                                            self.request_file_operation_confirmation(
+                                                &command,
+                                                format!("⚠️ DANGER: Are you sure you want to permanently delete:\n\n{}\n\nThis will move the item to trash and can be undone.", file_name)
+                                            );
                                         }
                                         ui.separator();
                                         if ui.button("🔐 Checksum").clicked() {
@@ -841,59 +861,177 @@ impl ProcessManagerApp {
     }
     fn copy_selected_files(&mut self) {
         if self.filepane_active_tab < self.filepane_tabs.len() {
-            let tab = &self.filepane_tabs[self.filepane_active_tab];
-            let left_count = tab.selected_left.len();
-            let right_count = tab.selected_right.len();
-            if left_count > 0 {
-                self.add_log(format!("Copied {} files from left panel", left_count));
-            }
-            if right_count > 0 {
-                self.add_log(format!("Copied {} files from right panel", right_count));
-            }
-            if left_count == 0 && right_count == 0 {
+            let tab = &mut self.filepane_tabs[self.filepane_active_tab];
+            let left_files: Vec<String> = tab.selected_left.iter()
+                .map(|name| format!("{}\\{}", tab.left_path, name))
+                .collect();
+            let right_files: Vec<String> = tab.selected_right.iter()
+                .map(|name| format!("{}\\{}", tab.right_path, name))
+                .collect();
+
+            let all_files: Vec<String> = left_files.iter().chain(right_files.iter()).cloned().collect();
+
+            if all_files.is_empty() {
                 self.add_log("No files selected to copy".to_string());
+                return;
+            }
+
+            let dest_path = if self.filepane_swap_columns {
+                tab.left_path.clone()
+            } else {
+                tab.right_path.clone()
+            };
+
+            let file_count = all_files.len();
+            let file_list = all_files.iter()
+                .map(|f| std::path::Path::new(f).file_name()
+                    .and_then(|n| n.to_str()).unwrap_or("unknown"))
+                .collect::<Vec<_>>()
+                .join("\n");
+
+            let message = format!(
+                "Are you sure you want to copy {} item(s):\n\n{}\n\nto:\n\n{}",
+                file_count, file_list, dest_path
+            );
+
+            if file_count == 1 {
+                let command = FilepaneCommand::CopyFile {
+                    source: all_files[0].clone(),
+                    destination: dest_path,
+                };
+                self.request_file_operation_confirmation(&command, message);
+            } else {
+                self.add_log(format!("Batch copy requested for {} files - requires individual confirmation", file_count));
             }
         }
     }
+
     fn cut_selected_files(&mut self) {
         if self.filepane_active_tab < self.filepane_tabs.len() {
-            let tab = &self.filepane_tabs[self.filepane_active_tab];
-            let left_count = tab.selected_left.len();
-            let right_count = tab.selected_right.len();
-            if left_count > 0 {
-                self.add_log(format!("Cut {} files from left panel", left_count));
-            }
-            if right_count > 0 {
-                self.add_log(format!("Cut {} files from right panel", right_count));
-            }
-            if left_count == 0 && right_count == 0 {
+            let tab = &mut self.filepane_tabs[self.filepane_active_tab];
+            let left_files: Vec<String> = tab.selected_left.iter()
+                .map(|name| format!("{}\\{}", tab.left_path, name))
+                .collect();
+            let right_files: Vec<String> = tab.selected_right.iter()
+                .map(|name| format!("{}\\{}", tab.right_path, name))
+                .collect();
+
+            let all_files: Vec<String> = left_files.iter().chain(right_files.iter()).cloned().collect();
+
+            if all_files.is_empty() {
                 self.add_log("No files selected to cut".to_string());
+                return;
+            }
+
+            let dest_path = if self.filepane_swap_columns {
+                tab.left_path.clone()
+            } else {
+                tab.right_path.clone()
+            };
+
+            let file_count = all_files.len();
+            let file_list = all_files.iter()
+                .map(|f| std::path::Path::new(f).file_name()
+                    .and_then(|n| n.to_str()).unwrap_or("unknown"))
+                .collect::<Vec<_>>()
+                .join("\n");
+
+            let message = format!(
+                "⚠️ Are you sure you want to MOVE {} item(s):\n\n{}\n\nto:\n\n{}\n\nThis will remove files from their original location.",
+                file_count, file_list, dest_path
+            );
+
+            if file_count == 1 {
+                let command = FilepaneCommand::MoveFile {
+                    source: all_files[0].clone(),
+                    destination: dest_path,
+                };
+                self.request_file_operation_confirmation(&command, message);
+            } else {
+                self.add_log(format!("Batch move requested for {} files - requires individual confirmation", file_count));
             }
         }
     }
     fn paste_files(&mut self) {
         self.add_log("Paste files (placeholder)".to_string());
     }
+    fn request_file_operation_confirmation(&mut self, command: &FilepaneCommand, message: String) {
+        self.filepane_confirm_action = Some(command.clone());
+        self.filepane_confirm_message = message;
+        self.filepane_show_confirm = true;
+        self.filepane_second_confirm = false;
+
+        // Store the pending operation for history tracking
+        match command {
+            FilepaneCommand::CopyFile { source, destination } => {
+                self.filepane_pending_operation = Some(FileOperation {
+                    operation_type: crate::ws::FileOperationType::Copy,
+                    source_path: source.clone(),
+                    destination_path: Some(destination.clone()),
+                    original_path: None,
+                    timestamp: std::time::SystemTime::now(),
+                });
+            }
+            FilepaneCommand::MoveFile { source, destination } => {
+                self.filepane_pending_operation = Some(FileOperation {
+                    operation_type: crate::ws::FileOperationType::Move,
+                    source_path: source.clone(),
+                    destination_path: Some(destination.clone()),
+                    original_path: Some(source.clone()), // Store original for potential undo
+                    timestamp: std::time::SystemTime::now(),
+                });
+            }
+            FilepaneCommand::DeleteFile { path } => {
+                self.filepane_pending_operation = Some(FileOperation {
+                    operation_type: crate::ws::FileOperationType::Delete,
+                    source_path: path.clone(),
+                    destination_path: None,
+                    original_path: Some(path.clone()),
+                    timestamp: std::time::SystemTime::now(),
+                });
+            }
+            _ => {}
+        }
+    }
+
     fn delete_selected_files(&mut self) {
         if self.filepane_active_tab < self.filepane_tabs.len() {
-            let left_count = self
-                .filepane_tabs[self.filepane_active_tab]
-                .selected_left
-                .len();
-            let right_count = self
-                .filepane_tabs[self.filepane_active_tab]
-                .selected_right
-                .len();
-            if left_count > 0 {
-                self.add_log(format!("Deleted {} files from left panel", left_count));
-                self.filepane_tabs[self.filepane_active_tab].selected_left.clear();
-            }
-            if right_count > 0 {
-                self.add_log(format!("Deleted {} files from right panel", right_count));
-                self.filepane_tabs[self.filepane_active_tab].selected_right.clear();
-            }
-            if left_count == 0 && right_count == 0 {
+            let tab = &mut self.filepane_tabs[self.filepane_active_tab];
+            let left_files: Vec<String> = tab.selected_left.iter()
+                .map(|name| format!("{}\\{}", tab.left_path, name))
+                .collect();
+            let right_files: Vec<String> = tab.selected_right.iter()
+                .map(|name| format!("{}\\{}", tab.right_path, name))
+                .collect();
+
+            let all_files: Vec<String> = left_files.iter().chain(right_files.iter()).cloned().collect();
+
+            if all_files.is_empty() {
                 self.add_log("No files selected to delete".to_string());
+                return;
+            }
+
+            let file_count = all_files.len();
+            let file_list = all_files.iter()
+                .map(|f| std::path::Path::new(f).file_name()
+                    .and_then(|n| n.to_str()).unwrap_or("unknown"))
+                .collect::<Vec<_>>()
+                .join("\n");
+
+            let message = format!(
+                "⚠️ DANGER: Are you sure you want to delete {} item(s)?\n\n{}\n\nThis will move items to trash and can be undone.",
+                file_count, file_list
+            );
+
+            if file_count == 1 {
+                let command = FilepaneCommand::DeleteFile {
+                    path: all_files[0].clone(),
+                };
+                self.request_file_operation_confirmation(&command, message);
+            } else {
+                // For multiple files, we need to handle them as a batch
+                self.add_log(format!("Batch delete requested for {} files - requires individual confirmation", file_count));
+                // In a full implementation, you might want to handle batch operations differently
             }
         }
     }

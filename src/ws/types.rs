@@ -205,8 +205,36 @@ pub enum ContextAction {
     NavigateToDirectory { path: String, panel_index: usize },
     OpenFile { path: String },
     CopyFile { source: String, destination: String, speed_limit: f64 },
+    MoveFile { source: String, destination: String },
+    DeleteFile { path: String },
     Cut,
     ShowProperties { file_info: FileInfo },
     LogMessage(String),
     CloseMenu,
+}
+
+#[derive(Clone, Debug)]
+pub struct FileOperation {
+    pub operation_type: FileOperationType,
+    pub source_path: String,
+    pub destination_path: Option<String>,
+    pub original_path: Option<String>, // For undo/restore
+    pub timestamp: std::time::SystemTime,
+}
+
+#[derive(Clone, Debug)]
+pub enum FileOperationType {
+    Copy,
+    Move,
+    Delete,
+    Create,
+    Rename,
+}
+
+#[derive(Clone, Debug)]
+pub struct TrashItem {
+    pub original_path: String,
+    pub trash_path: String,
+    pub deletion_time: std::time::SystemTime,
+    pub file_type: FileOperationType,
 }

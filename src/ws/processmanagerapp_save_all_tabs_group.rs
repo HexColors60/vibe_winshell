@@ -80,35 +80,86 @@ impl ProcessManagerApp {
         let should_show = self.filepane_show_confirm;
         let confirm_message = self.filepane_confirm_message.clone();
         let confirm_action = self.filepane_confirm_action.clone();
+        let is_second_confirm = self.filepane_second_confirm;
+
         if should_show && confirm_action.is_some() {
-            egui::Window::new("⚠️ Confirm Action")
+            let window_title = if is_second_confirm {
+                "⚠️ FINAL CONFIRMATION - This action cannot be undone!"
+            } else {
+                "⚠️ Confirm File Operation"
+            };
+
+            egui::Window::new(window_title)
                 .collapsible(false)
                 .resizable(false)
                 .anchor(egui::Align2::CENTER_CENTER, egui::vec2(0.0, 0.0))
                 .show(
                     ui.ctx(),
                     |ui| {
+                        ui.set_min_width(400.0);
                         ui.vertical_centered(|ui| {
                             ui.add_space(10.0);
+
+                            if is_second_confirm {
+                                ui.colored_label(egui::Color32::RED, "⚠️ WARNING: This is your final confirmation!");
+                                ui.add_space(5.0);
+                                ui.colored_label(egui::Color32::RED, "This action cannot be undone!");
+                                ui.add_space(10.0);
+                            }
+
                             ui.label(&confirm_message);
-                            ui.add_space(20.0);
-                            ui.horizontal(|ui| {
-                                if ui.button("✅ Yes").clicked() {
-                                    if let Some(action) = confirm_action {
-                                        self.add_log("Action confirmed".to_string());
-                                        self.execute_command(&action);
+
+                            if is_second_confirm {
+                                ui.add_space(10.0);
+                                ui.label("Are you absolutely sure you want to proceed?");
+                                ui.label("Type 'CONFIRM' to proceed:");
+                                let mut confirm_input = String::new();
+                                ui.add_sized([200.0, 25.0], egui::TextEdit::singleline(&mut confirm_input));
+
+                                ui.add_space(15.0);
+                                ui.horizontal(|ui| {
+                                    if ui.button("🚫 Cancel").clicked() {
+                                        self.add_log("Operation cancelled - user rejected final confirmation".to_string());
+                                        self.filepane_show_confirm = false;
+                                        self.filepane_second_confirm = false;
+                                        self.filepane_confirm_action = None;
+                                        self.filepane_confirm_message.clear();
+                                        self.filepane_pending_operation = None;
                                     }
-                                    self.filepane_show_confirm = false;
-                                    self.filepane_confirm_action = None;
-                                    self.filepane_confirm_message.clear();
-                                }
-                                if ui.button("❌ No").clicked() {
-                                    self.add_log("Action cancelled".to_string());
-                                    self.filepane_show_confirm = false;
-                                    self.filepane_confirm_action = None;
-                                    self.filepane_confirm_message.clear();
-                                }
-                            });
+
+                                    let confirm_button = ui.add_enabled(
+                                        confirm_input == "CONFIRM",
+                                        egui::Button::new("⚠️ YES, EXECUTE OPERATION")
+                                    );
+
+                                    if confirm_button.clicked() && confirm_input == "CONFIRM" {
+                                        if let Some(action) = confirm_action {
+                                            self.add_log("🔥 Final confirmation received - executing operation".to_string());
+                                            self.execute_real_command(&action);
+                                        }
+                                        self.filepane_show_confirm = false;
+                                        self.filepane_second_confirm = false;
+                                        self.filepane_confirm_action = None;
+                                        self.filepane_confirm_message.clear();
+                                        self.filepane_pending_operation = None;
+                                    }
+                                });
+                            } else {
+                                ui.add_space(20.0);
+                                ui.horizontal(|ui| {
+                                    if ui.button("❌ Cancel").clicked() {
+                                        self.add_log("Action cancelled by user".to_string());
+                                        self.filepane_show_confirm = false;
+                                        self.filepane_confirm_action = None;
+                                        self.filepane_confirm_message.clear();
+                                        self.filepane_pending_operation = None;
+                                    }
+                                    if ui.button("✅ Confirm").clicked() {
+                                        self.add_log("First confirmation received - requiring final confirmation".to_string());
+                                        self.filepane_second_confirm = true;
+                                    }
+                                });
+                            }
                             ui.add_space(10.0);
                         });
                     },
@@ -134,20 +185,272 @@ impl ProcessManagerApp {
         }
         self.add_log("=================================".to_string());
     }
-    pub fn open_file_with_system(&self, path: &str) {
+    pub fn execute_real_command(&mut self, command: &FilepaneCommand) {
+        match command {
+            FilepaneCommand::CopyFile { source, destination } => {
+                self.real_copy_file(source, destination);
+            }
+            FilepaneCommand::MoveFile { source, destination } => {
+                self.real_move_file(source, destination);
+            }
+            FilepaneCommand::DeleteFile { path } => {
+                self.real_delete_file(path);
+            }
+            FilepaneCommand::CreateDirectory { path } => {
+                self.real_create_directory(path);
+            }
+            FilepaneCommand::RenameFile { old_path, new_path } => {
+                self.real_rename_file(old_path, new_path);
+            }
+            _ => {
+                self.execute_command(command);
+            }
+        }
+
+        // Add to operation history
+        if let Some(ref operation) = self.filepane_pending_operation {
+            self.filepane_operation_history.push(operation.clone());
+        }
+        self.filepane_pending_operation = None;
+    }
+
+    fn real_copy_file(&mut self, source: &str, destination: &str) {
+        let source_path = std::path::Path::new(source);
+        let dest_path = std::path::Path::new(destination).join(
+            source_path.file_name().unwrap_or_default()
+        );
+
+        self.add_log(format!("📋 COPY: Starting copy operation"));
+        self.add_log(format!("   Source: {}", source));
+        self.add_log(format!("   Destination: {}", dest_path.display()));
+
+        match if source_path.is_dir() {
+            self.copy_directory(source_path, &dest_path)
+        } else {
+            self.copy_file(source_path, &dest_path)
+        } {
+            Ok(_) => {
+                self.add_log(format!("✅ Successfully copied to {}", dest_path.display()));
+            }
+            Err(e) => {
+                self.add_log(format!("❌ Copy failed: {}", e));
+            }
+        }
+    }
+
+    fn copy_file(&self, source: &std::path::Path, destination: &std::path::Path) -> std::io::Result<()> {
+        std::fs::copy(source, destination)?;
+        Ok(())
+    }
+
+    fn copy_directory(&self, source: &std::path::Path, destination: &std::path::Path) -> std::io::Result<()> {
+        std::fs::create_dir_all(destination)?;
+        for entry in std::fs::read_dir(source)? {
+            let entry = entry?;
+            let file_type = entry.file_type()?;
+            let source_path = entry.path();
+            let dest_path = destination.join(entry.file_name());
+
+            if file_type.is_dir() {
+                self.copy_directory(&source_path, &dest_path)?;
+            } else {
+                std::fs::copy(&source_path, &dest_path)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn real_move_file(&mut self, source: &str, destination: &str) {
+        let source_path = std::path::Path::new(source);
+        let dest_path = std::path::Path::new(destination).join(
+            source_path.file_name().unwrap_or_default()
+        );
+
+        self.add_log(format!("✂️ MOVE: Starting move operation"));
+        self.add_log(format!("   Source: {}", source));
+        self.add_log(format!("   Destination: {}", dest_path.display()));
+
+        match std::fs::rename(source, &dest_path) {
+            Ok(_) => {
+                self.add_log(format!("✅ Successfully moved to {}", dest_path.display()));
+            }
+            Err(e) => {
+                self.add_log(format!("❌ Move failed: {}", e));
+            }
+        }
+    }
+
+    fn real_delete_file(&mut self, path: &str) {
+        self.add_log(format!("🗑️ DELETE: Starting delete operation"));
+        self.add_log(format!("   Path: {}", path));
+
+        // Move to trash instead of permanent delete
+        match self.move_to_trash(path) {
+            Ok(trash_path) => {
+                let trash_item = TrashItem {
+                    original_path: path.to_string(),
+                    trash_path: trash_path.clone(),
+                    deletion_time: std::time::SystemTime::now(),
+                    file_type: crate::ws::FileOperationType::Delete,
+                };
+                self.filepane_trash_items.push(trash_item);
+                self.add_log(format!("✅ Moved to trash: {}", trash_path));
+            }
+            Err(e) => {
+                self.add_log(format!("❌ Delete failed: {}", e));
+            }
+        }
+    }
+
+    fn move_to_trash(&self, path: &str) -> Result<String, Box<dyn std::error::Error>> {
+        let source_path = std::path::Path::new(path);
+
         #[cfg(target_os = "windows")]
         {
-            let _ = std::process::Command::new("cmd")
+            // Use Windows API to move to recycle bin
+            use std::os::windows::ffi::OsStrExt;
+            use std::ffi::OsString;
+
+            let mut wide_path: Vec<u16> = OsString::from(path).encode_wide().collect();
+            wide_path.push(0); // Null terminate
+
+            // Create the SHFILEOPSTRUCT
+            let mut file_op = windows::Win32::Shell::SHFILEOPSTRUCTW {
+                hwnd: None,
+                wFunc: windows::Win32::Shell::FO_DELETE,
+                pFrom: wide_path.as_ptr(),
+                pTo: std::ptr::null(),
+                fFlags: windows::Win32::Shell::FOF_ALLOWUNDO | windows::Win32::Shell::FOF_NOCONFIRMATION,
+                fAnyOperationsAborted: false,
+                hNameMappings: std::ptr::null_mut(),
+                lpszProgressTitle: std::ptr::null(),
+            };
+
+            // Call SHFileOperationW
+            let result = unsafe { windows::Win32::Shell::SHFileOperationW(&mut file_op) };
+
+            if result != 0 {
+                return Err(format!("Failed to move to recycle bin: {}", result).into());
+            }
+
+            Ok("Windows Recycle Bin".to_string())
+        }
+
+        #[cfg(not(target_os = "windows"))]
+        {
+            // For non-Windows systems, create a trash directory
+            let home_dir = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+            let trash_dir = format!("{}/.trash", home_dir);
+            std::fs::create_dir_all(&trash_dir)?;
+
+            let file_name = source_path.file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("unknown");
+
+            let timestamp = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs();
+
+            let trash_name = format!("{}_{}", timestamp, file_name);
+            let trash_path = std::path::Path::new(&trash_dir).join(trash_name);
+
+            std::fs::rename(path, &trash_path)?;
+            Ok(trash_path.to_string_lossy().to_string())
+        }
+    }
+
+    fn real_create_directory(&mut self, path: &str) {
+        self.add_log(format!("📁 CREATE: Creating directory"));
+        self.add_log(format!("   Path: {}", path));
+
+        match std::fs::create_dir_all(path) {
+            Ok(_) => {
+                self.add_log(format!("✅ Successfully created directory: {}", path));
+            }
+            Err(e) => {
+                self.add_log(format!("❌ Create directory failed: {}", e));
+            }
+        }
+    }
+
+    fn real_rename_file(&mut self, old_path: &str, new_path: &str) {
+        self.add_log(format!("🏷️ RENAME: Starting rename operation"));
+        self.add_log(format!("   From: {}", old_path));
+        self.add_log(format!("   To: {}", new_path));
+
+        match std::fs::rename(old_path, new_path) {
+            Ok(_) => {
+                self.add_log(format!("✅ Successfully renamed to {}", new_path));
+            }
+            Err(e) => {
+                self.add_log(format!("❌ Rename failed: {}", e));
+            }
+        }
+    }
+
+    pub fn restore_from_trash(&mut self) -> bool {
+        if let Some(trash_item) = self.filepane_trash_items.pop() {
+            self.add_log(format!("♻️ RESTORE: Restoring from trash"));
+            self.add_log(format!("   Original path: {}", trash_item.original_path));
+            self.add_log(format!("   Trash path: {}", trash_item.trash_path));
+
+            match std::fs::rename(&trash_item.trash_path, &trash_item.original_path) {
+                Ok(_) => {
+                    self.add_log(format!("✅ Successfully restored to {}", trash_item.original_path));
+                    true
+                }
+                Err(e) => {
+                    self.add_log(format!("❌ Restore failed: {}", e));
+                    // Put it back in trash if restore failed
+                    self.filepane_trash_items.push(trash_item);
+                    false
+                }
+            }
+        } else {
+            self.add_log("❌ No items in trash to restore".to_string());
+            false
+        }
+    }
+
+    pub fn open_file_with_system(&self, path: &str) {
+        self.add_log(format!("🔧 OPEN: Opening file with system default"));
+        self.add_log(format!("   Path: {}", path));
+
+        #[cfg(target_os = "windows")]
+        {
+            match std::process::Command::new("cmd")
                 .args(&["/C", "start", "", path])
-                .spawn();
+                .spawn() {
+                Ok(_) => {
+                    self.add_log("✅ File opened successfully".to_string());
+                }
+                Err(e) => {
+                    self.add_log(format!("❌ Failed to open file: {}", e));
+                }
+            }
         }
         #[cfg(target_os = "linux")]
         {
-            let _ = std::process::Command::new("xdg-open").arg(path).spawn();
+            match std::process::Command::new("xdg-open").arg(path).spawn() {
+                Ok(_) => {
+                    self.add_log("✅ File opened successfully".to_string());
+                }
+                Err(e) => {
+                    self.add_log(format!("❌ Failed to open file: {}", e));
+                }
+            }
         }
         #[cfg(target_os = "macos")]
         {
-            let _ = std::process::Command::new("open").arg(path).spawn();
+            match std::process::Command::new("open").arg(path).spawn() {
+                Ok(_) => {
+                    self.add_log("✅ File opened successfully".to_string());
+                }
+                Err(e) => {
+                    self.add_log(format!("❌ Failed to open file: {}", e));
+                }
+            }
         }
     }
     pub fn save_current_conversation(&mut self) {

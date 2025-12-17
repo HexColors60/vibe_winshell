@@ -13,6 +13,8 @@ use crate::ws::FontPickerState;
 use crate::ws::FilepaneTab;
 use crate::ws::FileInfo;
 use crate::ws::FilepaneCommand;
+use crate::ws::FileOperation;
+use crate::ws::TrashItem;
 // Auto-generated module
 //
 // 🤖 Generated with [SplitRS](https://github.com/cool-japan/splitrs)
@@ -76,4 +78,8 @@ pub struct ProcessManagerApp {
     pub(super) filepane_show_confirm: bool,
     pub(super) filepane_confirm_action: Option<FilepaneCommand>,
     pub(super) filepane_confirm_message: String,
+    pub(super) filepane_second_confirm: bool,
+    pub(super) filepane_pending_operation: Option<FileOperation>,
+    pub(super) filepane_operation_history: Vec<FileOperation>,
+    pub(super) filepane_trash_items: Vec<TrashItem>,
 }
