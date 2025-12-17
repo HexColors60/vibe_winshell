@@ -20,38 +20,38 @@ pub enum ViewMode {
 }
 #[derive(Clone, Debug)]
 pub struct WindowInfo {
-    pid: u32,
-    process_name: String,
-    window_title: String,
-    window_id: u64,
-    is_foreground: bool,
+    pub pid: u32,
+    pub process_name: String,
+    pub window_title: String,
+    pub window_id: u64,
+    pub is_foreground: bool,
 }
 pub struct AppConfig {
-    programs: Vec<CustomProgram>,
-    font_path: String,
-    use_noto: bool,
-    theme: Theme,
-    live_grid_size: usize,
-    live_detail_percent: f32,
-    attempt_start_as_admin: bool,
+    pub programs: Vec<CustomProgram>,
+    pub font_path: String,
+    pub use_noto: bool,
+    pub theme: Theme,
+    pub live_grid_size: usize,
+    pub live_detail_percent: f32,
+    pub attempt_start_as_admin: bool,
 }
 #[derive(Clone, Debug)]
 pub struct FileHandle {
-    pid: u32,
-    process_name: String,
-    path: String,
-    size: u64,
-    access_type: String,
+    pub pid: u32,
+    pub process_name: String,
+    pub path: String,
+    pub size: u64,
+    pub access_type: String,
 }
 #[derive(Clone, Debug)]
 pub struct NetworkConnection {
-    pid: u32,
-    process_name: String,
-    protocol: String,
-    local_addr: String,
-    remote_addr: String,
-    state: String,
-    connection_id: String,
+    pub pid: u32,
+    pub process_name: String,
+    pub protocol: String,
+    pub local_addr: String,
+    pub remote_addr: String,
+    pub state: String,
+    pub connection_id: String,
 }
 #[derive(Clone, Debug)]
 pub struct FileInfo {
@@ -87,15 +87,15 @@ impl FileInfo {
 }
 #[derive(Clone, Debug)]
 pub struct ProcessInfo {
-    pid: u32,
-    name: String,
-    memory: u64,
-    cpu_usage: f32,
-    parent_pid: Option<u32>,
-    status: String,
-    run_time: u64,
-    is_foreground: bool,
-    exe_path: Option<String>,
+    pub pid: u32,
+    pub name: String,
+    pub memory: u64,
+    pub cpu_usage: f32,
+    pub parent_pid: Option<u32>,
+    pub status: String,
+    pub run_time: u64,
+    pub is_foreground: bool,
+    pub exe_path: Option<String>,
 }
 #[derive(PartialEq, Clone, Copy)]
 pub enum SortColumn {
@@ -149,36 +149,36 @@ pub enum Theme {
 }
 #[derive(Clone, Debug)]
 pub struct CustomProgram {
-    name: String,
-    path: String,
-    args: String,
-    admin: bool,
+    pub name: String,
+    pub path: String,
+    pub args: String,
+    pub admin: bool,
 }
 pub struct FontPickerState {
-    is_open: bool,
-    directory: String,
-    files: Vec<String>,
-    filter: String,
-    selected_file: Option<String>,
-    preview_text: String,
-    error_msg: Option<String>,
+    pub is_open: bool,
+    pub directory: String,
+    pub files: Vec<String>,
+    pub filter: String,
+    pub selected_file: Option<String>,
+    pub preview_text: String,
+    pub error_msg: Option<String>,
 }
 #[derive(Clone, Debug)]
 pub struct FilepaneTab {
-    name: String,
-    left_path: String,
-    right_path: String,
-    selected_left: Vec<String>,
-    selected_right: Vec<String>,
-    filter: String,
-    left_checkboxes: HashSet<String>,
-    right_checkboxes: HashSet<String>,
-    show_checkboxes: bool,
-    command_history: Vec<FilepaneCommand>,
-    undo_stack: Vec<FilepaneCommand>,
-    redo_stack: Vec<FilepaneCommand>,
-    copy_speed_limit_mb_per_sec: f64,
-    checksum_algorithm: ChecksumAlgorithm,
+    pub name: String,
+    pub left_path: String,
+    pub right_path: String,
+    pub selected_left: Vec<String>,
+    pub selected_right: Vec<String>,
+    pub filter: String,
+    pub left_checkboxes: HashSet<String>,
+    pub right_checkboxes: HashSet<String>,
+    pub show_checkboxes: bool,
+    pub command_history: Vec<FilepaneCommand>,
+    pub undo_stack: Vec<FilepaneCommand>,
+    pub redo_stack: Vec<FilepaneCommand>,
+    pub copy_speed_limit_mb_per_sec: f64,
+    pub checksum_algorithm: ChecksumAlgorithm,
 }
 impl FilepaneTab {
     pub fn new(name: String, left_path: String, right_path: String) -> Self {
