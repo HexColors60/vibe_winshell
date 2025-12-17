@@ -1,0 +1,8 @@
+[package]
+name = "vibe_winshell_splitrs"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+dirs = "6.0.0"
+eframe = "0.33.3"
