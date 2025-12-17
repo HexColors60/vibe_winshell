@@ -1,4 +1,4 @@
-use std::alloc::System;
+use sysinfo::System;
 use crate::ws::ProcessInfo;
 use crate::ws::FileHandle;
 use crate::ws::NetworkConnection;

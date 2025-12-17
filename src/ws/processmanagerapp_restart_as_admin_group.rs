@@ -1,4 +1,4 @@
-use std::alloc::System;
+use sysinfo::System;
 use std::time::Instant;
 use std::time::Duration;
 use crate::ws::SortColumn;

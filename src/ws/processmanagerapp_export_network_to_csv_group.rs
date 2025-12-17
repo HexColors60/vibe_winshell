@@ -8,6 +8,7 @@ use std::fs::File;
 use std::collections::{HashMap, HashSet};
 use super::processmanagerapp_type::ProcessManagerApp;
 
+use std::io::Write;
 impl ProcessManagerApp {
     fn export_network_to_csv(&self) -> Result<String, String> {
         let filename = format!(
