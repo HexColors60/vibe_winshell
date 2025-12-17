@@ -307,8 +307,7 @@ impl ProcessManagerApp {
                                                 );
                                         }
                                         if ui.button("📋 Copy Path").clicked() {
-                                            ui.output_mut(|o| o.copied_text = file_path.clone());
-                                            context_actions.push(ContextAction::CloseMenu);
+                                            ui.ctx().copy_text(file_path.clone());context_actions.push(ContextAction::CloseMenu);
                                         }
                                         if ui.button("ℹ️ Properties").clicked() {
                                             context_actions

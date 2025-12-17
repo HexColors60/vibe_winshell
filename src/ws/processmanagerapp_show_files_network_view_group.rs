@@ -143,8 +143,7 @@ impl ProcessManagerApp {
                                                         ui.label(&file.path);
                                                         ui.weak(format!("({})", file.access_type));
                                                         if ui.button("📋").on_hover_text("Copy Path").clicked() {
-                                                            ui.output_mut(|o| o.copied_text = file.path.clone());
-                                                        }
+                                                            ui.ctx().copy_text(file.path.clone());}
                                                         if ui
                                                             .button("📂")
                                                             .on_hover_text("Open Location")
@@ -188,8 +187,7 @@ impl ProcessManagerApp {
                                                                 "{} {} {} -> {} [{}]", conn.process_name, conn.protocol,
                                                                 conn.local_addr, conn.remote_addr, conn.state
                                                             );
-                                                            ui.output_mut(|o| o.copied_text = info);
-                                                        }
+                                                            ui.ctx().copy_text(info);}
                                                         if ui
                                                             .button("🔌")
                                                             .on_hover_text("Close Connection")
@@ -303,8 +301,7 @@ impl ProcessManagerApp {
                 if files.is_empty() && conns.is_empty() {
                     process_data.push_str("\nNo active resources\n");
                 }
-                ui.output_mut(|o| o.copied_text = process_data);
-                self.add_log(
+                ui.ctx().copy_text(process_data);self.add_log(
                     format!(
                         "Copied data for process {} ({}) to clipboard", process.name,
                         process.pid

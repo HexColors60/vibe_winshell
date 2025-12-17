@@ -33,13 +33,11 @@ impl ProcessManagerApp {
                                     .collect();
                                 selected_logs.sort();
                                 let combined = selected_logs.join("\n");
-                                ui.output_mut(|o| o.copied_text = combined);
-                            }
+                                ui.ctx().copy_text(combined);}
                         }
                         if ui.button("📋 Copy All").clicked() {
                             let all_logs = self.logs.join("\n");
-                            ui.output_mut(|o| o.copied_text = all_logs);
-                        }
+                            ui.ctx().copy_text(all_logs);}
                         if ui.button("❌ Clear Selection").clicked() {
                             self.selected_log_indices.clear();
                         }

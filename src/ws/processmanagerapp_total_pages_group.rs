@@ -8,7 +8,7 @@ use std::collections::{HashMap, HashSet};
 use super::processmanagerapp_type::ProcessManagerApp;
 
 impl ProcessManagerApp {
-    fn total_pages<T>(&self, items: &[T]) -> usize {
+    pub(crate) fn total_pages<T>(&self, items: &[T]) -> usize {
         (items.len() + self.items_per_page - 1) / self.items_per_page
     }
 }

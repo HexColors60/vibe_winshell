@@ -97,8 +97,7 @@ impl ProcessManagerApp {
                                                         "{} - {} (PID: {})", window.window_title, window
                                                         .process_name, window.pid
                                                     );
-                                                    ui.output_mut(|o| o.copied_text = info);
-                                                }
+                                                    ui.ctx().copy_text(info);}
                                                 if let Some(exe_path) = pid_to_exe.get(&window.pid) {
                                                     if ui.button("⭐ ToNew").clicked() {
                                                         program_to_add = Some((
@@ -170,8 +169,7 @@ impl ProcessManagerApp {
                                         "{} - {} (PID: {})", window.window_title, window
                                         .process_name, window.pid
                                     );
-                                    ui.output_mut(|o| o.copied_text = info);
-                                }
+                                    ui.ctx().copy_text(info);}
                                 if let Some(exe_path) = pid_to_exe.get(&window.pid) {
                                     if ui
                                         .button("⭐")

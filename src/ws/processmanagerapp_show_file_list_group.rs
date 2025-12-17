@@ -156,8 +156,7 @@ impl ProcessManagerApp {
                             ui.label(&file.access_type);
                             ui.separator();
                             if ui.button("📋 Copy").clicked() {
-                                ui.output_mut(|o| o.copied_text = file.path.clone());
-                            }
+                                ui.ctx().copy_text(file.path.clone());}
                             if ui.button("📂 Open").clicked() {
                                 path_to_open = Some(file.path.clone());
                             }

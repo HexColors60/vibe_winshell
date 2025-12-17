@@ -93,8 +93,7 @@ impl ProcessManagerApp {
                                     "{} {} {} -> {} [{}]", conn.process_name, conn.protocol,
                                     conn.local_addr, conn.remote_addr, conn.state
                                 );
-                                ui.output_mut(|o| o.copied_text = info);
-                            }
+                                ui.ctx().copy_text(info);}
                             if ui.button("🔌 Close").clicked() {
                                 conn_to_close = Some(conn.connection_id.clone());
                             }
