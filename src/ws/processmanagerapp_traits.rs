@@ -12,7 +12,7 @@ use std::time::Duration;
 //
 // 🤖 Generated with [SplitRS](https://github.com/cool-japan/splitrs)
 
-use super::types::ProcessManagerApp;
+// use super::types::ProcessManagerApp;
 
 impl eframe::App for ProcessManagerApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {

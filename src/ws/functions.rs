@@ -12,7 +12,7 @@ use std::io::Write;
 use crate::ws::ProcessManagerApp;
 
 pub fn main() -> eframe::Result {
-    let icon_data = eframe::icon_data::from_png_bytes(include_bytes!("../winshell.png"))
+    let icon_data = eframe::icon_data::from_png_bytes(include_bytes!("../../winshell.png"))
         .unwrap_or_default();
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()

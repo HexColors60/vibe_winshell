@@ -269,6 +269,135 @@ impl ProcessManagerApp {
                 },
             );
     }
+
+    #[cfg(windows)]
+    pub fn capture_window_thumbnail(&self, window_id: u64, max_width: i32, max_height: i32) -> Option<egui::ColorImage> {
+        use windows::Win32::Foundation::HWND;
+        use windows::Win32::Graphics::Gdi::{
+            CreateCompatibleDC, CreateCompatibleBitmap, SelectObject, DeleteDC, DeleteObject,
+            GetDC, ReleaseDC, BitBlt, SRCCOPY, GetDIBits, BITMAPINFO, BITMAPINFOHEADER,
+            BI_RGB, DIB_RGB_COLORS,
+        };
+        use windows::Win32::UI::WindowsAndMessaging::GetWindowRect;
+        
+        unsafe {
+            let hwnd = HWND(window_id as *mut _);
+            
+            // Get window size
+            let mut rect = std::mem::zeroed();
+            if GetWindowRect(hwnd, &mut rect).is_err() {
+                return None;
+            }
+            
+            let width = (rect.right - rect.left) as i32;
+            let height = (rect.bottom - rect.top) as i32;
+            
+            if width <= 0 || height <= 0 {
+                return None;
+            }
+            
+            // Scale down for thumbnail
+            let max_width = max_width.max(32) as f32;
+            let max_height = max_height.max(32) as f32;
+            let scale = f32::min(max_width / width as f32, max_height / height as f32).min(1.0);
+            let thumb_width = (width as f32 * scale) as i32;
+            let thumb_height = (height as f32 * scale) as i32;
+            
+            if thumb_width <= 0 || thumb_height <= 0 {
+                return None;
+            }
+            
+            // Create DC and bitmap
+            let hdc_window = GetDC(hwnd);
+            if hdc_window.0.is_null() {
+                return None;
+            }
+            
+            let hdc_mem = CreateCompatibleDC(hdc_window);
+            if hdc_mem.0.is_null() {
+                ReleaseDC(hwnd, hdc_window);
+                return None;
+            }
+            
+            let hbitmap = CreateCompatibleBitmap(hdc_window, width, height);
+            if hbitmap.0.is_null() {
+                DeleteDC(hdc_mem);
+                ReleaseDC(hwnd, hdc_window);
+                return None;
+            }
+            
+            let old_bitmap = SelectObject(hdc_mem, hbitmap);
+            
+            // Capture window content using BitBlt
+            let _ = BitBlt(hdc_mem, 0, 0, width, height, hdc_window, 0, 0, SRCCOPY);
+            
+            // Get bitmap data
+            let mut bmi = BITMAPINFO {
+                bmiHeader: BITMAPINFOHEADER {
+                    biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
+                    biWidth: width,
+                    biHeight: -height, // Top-down
+                    biPlanes: 1,
+                    biBitCount: 32,
+                    biCompression: BI_RGB.0,
+                    biSizeImage: 0,
+                    biXPelsPerMeter: 0,
+                    biYPelsPerMeter: 0,
+                    biClrUsed: 0,
+                    biClrImportant: 0,
+                },
+                bmiColors: [std::mem::zeroed()],
+            };
+            
+            let mut buffer: Vec<u8> = vec![0; (width * height * 4) as usize];
+            
+            let result = GetDIBits(
+                hdc_mem,
+                hbitmap,
+                0,
+                height as u32,
+                Some(buffer.as_mut_ptr() as *mut _),
+                &mut bmi,
+                DIB_RGB_COLORS,
+            );
+            
+            // Cleanup
+            SelectObject(hdc_mem, old_bitmap);
+            DeleteObject(hbitmap);
+            DeleteDC(hdc_mem);
+            ReleaseDC(hwnd, hdc_window);
+            
+            if result == 0 {
+                return None;
+            }
+            
+            // Convert BGRA to RGBA and resize
+            let mut pixels = Vec::with_capacity((thumb_width * thumb_height) as usize);
+            
+            for y in 0..thumb_height {
+                for x in 0..thumb_width {
+                    // Simple nearest-neighbor scaling
+                    let src_x = (x as f32 / scale) as i32;
+                    let src_y = (y as f32 / scale) as i32;
+                    let src_idx = ((src_y * width + src_x) * 4) as usize;
+                    
+                    if src_idx + 3 < buffer.len() {
+                        let b = buffer[src_idx];
+                        let g = buffer[src_idx + 1];
+                        let r = buffer[src_idx + 2];
+                        pixels.push(egui::Color32::from_rgb(r, g, b));
+                    } else {
+                        pixels.push(egui::Color32::from_gray(50));
+                    }
+                }
+            }
+            
+            Some(egui::ColorImage {
+                size: [thumb_width as usize, thumb_height as usize],
+                pixels,
+            })
+        }
+    }
     #[cfg(not(windows))]
     pub fn capture_window_thumbnail(
         &self,
