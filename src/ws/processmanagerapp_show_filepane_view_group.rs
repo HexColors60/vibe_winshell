@@ -12,6 +12,8 @@ use crate::ws::FilepaneCommand;
 use std::collections::{HashMap, HashSet};
 use super::processmanagerapp_type::ProcessManagerApp;
 use crate::ws::types::FileInfo;
+use crate::ws::FileOperation;
+use crate::ws::FilepaneCommand;
 
 impl ProcessManagerApp {
     pub(crate) fn show_filepane_view(&mut self, ui: &mut egui::Ui) {

@@ -7,6 +7,18 @@ use crate::ws::FileInfo;
 
 use std::collections::{HashMap, HashSet};
 use super::processmanagerapp_type::ProcessManagerApp;
+use crate::ws::FilepaneCommand;
+use crate::ws::TrashItem;
+
+// use windows::Win32::Shell::SHFILEOPSTRUCTW;
+// use windows::Win32::Shell::FO_DELETE;
+// use windows::Win32::Shell::FOF_ALLOWUNDO;
+// use windows::Win32::Shell::SHFileOperationW;
+
+use windows::Win32::UI::Shell::{
+    SHFILEOPSTRUCTW, SHFileOperationW, FO_DELETE, FOF_ALLOWUNDO, FOF_NOCONFIRMATION,
+};
+
 
 impl ProcessManagerApp {
     pub fn save_all_tabs(&mut self) {
@@ -315,19 +327,19 @@ impl ProcessManagerApp {
             wide_path.push(0); // Null terminate
 
             // Create the SHFILEOPSTRUCT
-            let mut file_op = windows::Win32::Shell::SHFILEOPSTRUCTW {
+            let mut file_op = windows::Win32::UI::Shell::SHFILEOPSTRUCTW {
                 hwnd: None,
-                wFunc: windows::Win32::Shell::FO_DELETE,
+                wFunc: windows::Win32::UI::Shell::FO_DELETE,
                 pFrom: wide_path.as_ptr(),
                 pTo: std::ptr::null(),
-                fFlags: windows::Win32::Shell::FOF_ALLOWUNDO | windows::Win32::Shell::FOF_NOCONFIRMATION,
+                fFlags: windows::Win32::UI::Shell::FOF_ALLOWUNDO | windows::Win32::UI::Shell::FOF_NOCONFIRMATION,
                 fAnyOperationsAborted: false,
                 hNameMappings: std::ptr::null_mut(),
                 lpszProgressTitle: std::ptr::null(),
             };
 
             // Call SHFileOperationW
-            let result = unsafe { windows::Win32::Shell::SHFileOperationW(&mut file_op) };
+            let result = unsafe { windows::Win32::UI::Shell::SHFileOperationW(&mut file_op) };
 
             if result != 0 {
                 return Err(format!("Failed to move to recycle bin: {}", result).into());
@@ -413,7 +425,7 @@ impl ProcessManagerApp {
         }
     }
 
-    pub fn open_file_with_system(&self, path: &str) {
+    pub fn open_file_with_system(&mut self, path: &str) {
         self.add_log(format!("🔧 OPEN: Opening file with system default"));
         self.add_log(format!("   Path: {}", path));
 
