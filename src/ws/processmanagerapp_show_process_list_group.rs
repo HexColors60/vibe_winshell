@@ -8,7 +8,7 @@ use std::collections::{HashMap, HashSet};
 use super::processmanagerapp_type::ProcessManagerApp;
 
 impl ProcessManagerApp {
-    fn show_process_list(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
+    pub fn show_process_list(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
         egui::ScrollArea::both()
             .auto_shrink([false, false])
             .show(
@@ -266,7 +266,7 @@ impl ProcessManagerApp {
             );
     }
     #[cfg(not(windows))]
-    fn capture_window_thumbnail(
+    pub fn capture_window_thumbnail(
         &self,
         _window_id: u64,
         _max_width: i32,

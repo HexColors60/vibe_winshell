@@ -8,7 +8,7 @@ use std::collections::{HashMap, HashSet};
 use super::processmanagerapp_type::ProcessManagerApp;
 
 impl ProcessManagerApp {
-    fn restart_as_admin() -> Result<(), String> {
+    pub fn restart_as_admin() -> Result<(), String> {
         #[cfg(windows)]
         {
             use windows::Win32::UI::Shell::ShellExecuteW;
@@ -41,7 +41,7 @@ impl ProcessManagerApp {
         }
         #[cfg(not(windows))] { Err("Not supported on this platform".to_string()) }
     }
-    fn new(cc: &eframe::CreationContext) -> Self {
+    pub fn new(cc: &eframe::CreationContext) -> Self {
         let mut system = System::new_all();
         system.refresh_all();
         let start_time = Instant::now();

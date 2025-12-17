@@ -8,6 +8,9 @@ use std::time::{Duration, Instant};
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Write;
+
+use crate::ws::ProcessManagerApp;
+
 pub fn main() -> eframe::Result {
     let icon_data = eframe::icon_data::from_png_bytes(include_bytes!("../winshell.png"))
         .unwrap_or_default();
