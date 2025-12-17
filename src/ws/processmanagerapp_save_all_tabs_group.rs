@@ -336,7 +336,7 @@ impl ProcessManagerApp {
                 wFunc: windows::Win32::UI::Shell::FO_DELETE,
                 pFrom: PCWSTR::from_raw(wide_path.as_ptr()),
                 pTo: PCWSTR::null(),
-                fFlags: (windows::Win32::UI::Shell::FOF_ALLOWUNDO | windows::Win32::UI::Shell::FOF_NOCONFIRMATION).0,
+                fFlags: (windows::Win32::UI::Shell::FOF_ALLOWUNDO | windows::Win32::UI::Shell::FOF_NOCONFIRMATION).0 as u16,
                 fAnyOperationsAborted: BOOL::from(false),
                 hNameMappings: std::ptr::null_mut(),
                 lpszProgressTitle: PCWSTR::null(),
