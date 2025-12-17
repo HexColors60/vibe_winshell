@@ -14,6 +14,9 @@ use crate::ws::FilepaneTab;
 use std::collections::{HashMap, HashSet};
 use super::processmanagerapp_type::ProcessManagerApp;
 
+use egui;
+use crate::ws::types;
+
 impl ProcessManagerApp {
     pub fn restart_as_admin() -> Result<(), String> {
         #[cfg(windows)]
@@ -67,7 +70,13 @@ impl ProcessManagerApp {
             selected_pid: None,
             auto_refresh: true,
             view_mode: ViewMode::Processes,
-            theme: config.theme,
+            // theme: config.theme,
+            theme: match config.theme {
+              crate::ws::types::Theme::Light => egui::Theme::Light,
+              crate::ws::types::Theme::Dark => egui::Theme::Dark,
+              // crate::ws::types::Theme::System => egui::Theme::System,
+            },
+
             show_graphs: false,
             cpu_history: Vec::new(),
             memory_history: Vec::new(),
