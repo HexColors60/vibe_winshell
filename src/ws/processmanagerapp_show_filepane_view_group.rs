@@ -1192,7 +1192,7 @@ impl ProcessManagerApp {
         }
     }
 
-    fn copy_file_with_progress(&self, source: &str, destination: &str, file_size: u64) -> std::io::Result<u64> {
+    fn copy_file_with_progress(&mut self, source: &str, destination: &str, file_size: u64) -> std::io::Result<u64> {
         use std::io::{Read, Write, BufReader, BufWriter};
 
         let mut total_copied = 0u64;
@@ -1219,7 +1219,7 @@ impl ProcessManagerApp {
         Ok(total_copied)
     }
 
-    fn copy_directory_recursive(&self, source: &str, destination: &str) -> std::io::Result<u64> {
+    fn copy_directory_recursive(&mut self, source: &str, destination: &str) -> std::io::Result<u64> {
         let mut total_copied = 0u64;
 
         // Create destination directory
